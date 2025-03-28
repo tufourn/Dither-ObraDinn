@@ -1,0 +1,60 @@
+[gd_scene load_steps=12 format=3 uid="uid://b3b0toiw3odig"]
+
+[ext_resource type="Texture2D" uid="uid://b3gagm2t6ud8c" path="res://icon.svg" id="1_nxogm"]
+[ext_resource type="Script" uid="uid://cl17omj2c63il" path="res://camera_3d.gd" id="1_ulcgi"]
+[ext_resource type="Script" uid="uid://y8m8r72q5e8a" path="res://Dither/post_process.gd" id="3_3253y"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_nxogm"]
+albedo_texture = ExtResource("1_nxogm")
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_drvgu"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_3253y"]
+albedo_texture = ExtResource("1_nxogm")
+
+[sub_resource type="BoxMesh" id="BoxMesh_ulcgi"]
+
+[sub_resource type="SphereMesh" id="SphereMesh_3253y"]
+
+[sub_resource type="Environment" id="Environment_u3cyc"]
+
+[sub_resource type="CompositorEffect" id="CompositorEffect_m7jmp"]
+resource_local_to_scene = false
+resource_name = ""
+enabled = true
+effect_callback_type = 4
+needs_motion_vectors = false
+needs_normal_roughness = false
+script = ExtResource("3_3253y")
+metadata/_custom_type_script = "uid://y8m8r72q5e8a"
+
+[sub_resource type="Compositor" id="Compositor_y2354"]
+compositor_effects = Array[CompositorEffect]([SubResource("CompositorEffect_m7jmp")])
+
+[node name="Scene" type="Node"]
+
+[node name="plane" type="MeshInstance3D" parent="."]
+transform = Transform3D(10, 0, 0, 0, 10, 0, 0, 0, 10, 0, 0, 0)
+material_override = SubResource("StandardMaterial3D_nxogm")
+mesh = SubResource("PlaneMesh_drvgu")
+
+[node name="cube" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
+material_override = SubResource("StandardMaterial3D_3253y")
+mesh = SubResource("BoxMesh_ulcgi")
+
+[node name="sphere" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.04, 0.5, 0.872)
+mesh = SubResource("SphereMesh_3253y")
+
+[node name="Camera3D" type="Camera3D" parent="."]
+transform = Transform3D(0.949513, -0.058636, 0.308199, 0, 0.982379, 0.186901, -0.313727, -0.177465, 0.932782, 0.686511, 0.941996, 2.11271)
+script = ExtResource("1_ulcgi")
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.705872, -0.317586, 0.633155, 0, 0.893857, 0.448352, -0.70834, -0.316479, 0.630948, 0, 1.48671, 2.11271)
+shadow_enabled = true
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_u3cyc")
+compositor = SubResource("Compositor_y2354")
