@@ -4,8 +4,12 @@ extends CompositorEffect
 class_name DitherPostProcess
 
 var rd : RenderingDevice
+
 var shader : RID
 var pipeline : RID
+
+var nearest_sampler : RID
+var cubemap_texture : RID
 
 func _init():
 	effect_callback_type = EFFECT_CALLBACK_TYPE_POST_TRANSPARENT
@@ -15,6 +19,10 @@ func _notification(what):
 	if what == NOTIFICATION_PREDELETE:
 		if shader.is_valid():
 			rd.free_rid(shader)
+		if nearest_sampler.is_valid():
+			rd.free_rid(nearest_sampler)
+		if cubemap_texture.is_valid():
+			rd.free_rid(cubemap_texture)
 
 func _render_callback(p_effect_callback_type, p_render_data):
 	if rd and p_effect_callback_type == EFFECT_CALLBACK_TYPE_POST_TRANSPARENT and pipeline.is_valid():
@@ -39,11 +47,18 @@ func _render_callback(p_effect_callback_type, p_render_data):
 			for view in range(view_count):
 				var input_image = render_scene_buffers.get_color_layer(view)
 				
-				var uniform : RDUniform = RDUniform.new()
-				uniform.uniform_type = RenderingDevice.UNIFORM_TYPE_IMAGE
-				uniform.binding = 0
-				uniform.add_id(input_image)
-				var uniform_set = UniformSetCacheRD.get_cache(shader, 0, [ uniform ])
+				var color_image : RDUniform = RDUniform.new()
+				color_image.uniform_type = RenderingDevice.UNIFORM_TYPE_IMAGE
+				color_image.binding = 0
+				color_image.add_id(input_image)
+				
+				var cubemap_image : RDUniform = RDUniform.new()
+				cubemap_image.uniform_type = RenderingDevice.UNIFORM_TYPE_SAMPLER_WITH_TEXTURE
+				cubemap_image.binding = 1
+				cubemap_image.add_id(nearest_sampler)
+				cubemap_image.add_id(cubemap_texture)
+				
+				var uniform_set = UniformSetCacheRD.get_cache(shader, 0, [ color_image, cubemap_image ])
 				
 				var compute_list = rd.compute_list_begin()
 				rd.compute_list_bind_compute_pipeline(compute_list, pipeline)
@@ -65,3 +80,29 @@ func _init_compute():
 		push_error(shader_spirv.compile_error_compute)
 	
 	pipeline = rd.compute_pipeline_create(shader)
+	
+	var sampler_state = RDSamplerState.new()
+	sampler_state.min_filter = RenderingDevice.SAMPLER_FILTER_NEAREST
+	sampler_state.mag_filter = RenderingDevice.SAMPLER_FILTER_NEAREST
+	nearest_sampler = rd.sampler_create(sampler_state)
+	
+	var bayer : CompressedTexture2D = load("res://Dither/bayer.png")
+	var bayer_img : Image = bayer.get_image()
+	bayer_img.convert(Image.FORMAT_R8)
+	
+	var bayer_img_data : PackedByteArray = bayer_img.get_data()
+	var cubemap_data : Array[PackedByteArray] = []
+	for i in range(6):
+		cubemap_data.push_back(bayer_img_data)
+	
+	var cubemap_format : RDTextureFormat = RDTextureFormat.new()
+	cubemap_format.format = RenderingDevice.DATA_FORMAT_R8_UNORM
+	cubemap_format.texture_type = RenderingDevice.TEXTURE_TYPE_CUBE
+	cubemap_format.usage_bits = RenderingDevice.TEXTURE_USAGE_SAMPLING_BIT
+	cubemap_format.array_layers = 6
+	cubemap_format.width = bayer.get_width()
+	cubemap_format.height = bayer.get_height()
+
+	var cubemap_view : RDTextureView = RDTextureView.new()
+	
+	cubemap_texture = rd.texture_create(cubemap_format, cubemap_view, cubemap_data)

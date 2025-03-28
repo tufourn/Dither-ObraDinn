@@ -5,6 +5,8 @@ layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
 
 layout(rgba16f, set = 0, binding = 0) uniform image2D color_image;
 
+layout(set = 0, binding = 1) uniform samplerCube cubemap_image;
+
 layout(push_constant, std430) uniform Params {
 	vec2 raster_size;
 	vec2 reserved;
@@ -28,7 +30,7 @@ void main() {
 
 	float lum = color.r * 0.2125 + color.g * 0.7154 + color.b * 0.0721;
 
-	ivec2 bayer_uv = uv;
+	ivec2 bayer_uv = uv / 2;
 	float bayer_value = bayer_index[bayer_uv.x % 4][bayer_uv.y % 4];
 	
 	color.rgb = vec3(step(bayer_value, lum));
