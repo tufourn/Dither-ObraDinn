@@ -37,16 +37,46 @@ func _render_callback(p_effect_callback_type, p_render_data):
 			var y_groups = (render_size.y - 1) / 8 + 1
 			var z_groups = 1
 			
-			var push_constants : PackedFloat32Array = PackedFloat32Array()
-			push_constants.push_back(render_size.x)
-			push_constants.push_back(render_size.y)
-			push_constants.push_back(0.0) # pad
-			push_constants.push_back(0.0) # pad
-			
 			var view_count = render_scene_buffers.get_view_count()
 			for view in range(view_count):
 				var input_image = render_scene_buffers.get_color_layer(view)
 				
+				var projection : Projection = render_scene_data.get_view_projection(view)
+				var cam_transform : Transform3D = render_scene_data.get_cam_transform()
+				var eye_offset : Vector3 = render_scene_data.get_view_eye_offset(view)
+				
+				var eye_position : Vector3 = cam_transform * Vector3(0.0, 0.0, 0.0) + eye_offset
+				var eye_position_vec4 = Vector4(eye_position.x, eye_position.y, eye_position.z, 1.0)
+				
+				# ndc of frustum corners
+				var top_left : Vector4 = Vector4(-1.0, -1.0, 1.0, 1.0)
+				var top_right : Vector4 = Vector4(1.0, -1.0, 1.0, 1.0)
+				var bottom_left : Vector4 = Vector4(-1.0, 1.0, 1.0, 1.0)
+				var bottom_right : Vector4 = Vector4(1.0, 1.0, 1.0, 1.0)
+				
+				top_left = projection.inverse() * top_left
+				top_right = projection.inverse() * top_right
+				bottom_left = projection.inverse() * bottom_left
+				bottom_right = projection.inverse() * bottom_right
+				
+				var top_left_vec3 : Vector3 = cam_transform * Vector3(top_left.x, top_left.y, top_left.z) - eye_position
+				var top_right_vec3 : Vector3 = cam_transform * Vector3(top_right.x, top_right.y, top_right.z) - eye_position
+				var bottom_left_vec3 : Vector3 = cam_transform * Vector3(bottom_left.x, bottom_left.y, bottom_left.z) - eye_position
+				var bottom_right_vec3 : Vector3 = cam_transform * Vector3(bottom_right.x, bottom_right.y, bottom_right.z) - eye_position
+				
+				top_left = Vector4(top_left_vec3.x, top_left_vec3.y, top_left_vec3.z, 1.0)
+				top_right = Vector4(top_right_vec3.x, top_right_vec3.y, top_right_vec3.z, 1.0)
+				bottom_left = Vector4(bottom_left_vec3.x, bottom_left_vec3.y, bottom_left_vec3.z, 1.0)
+				bottom_right = Vector4(bottom_right_vec3.x, bottom_right_vec3.y, bottom_right_vec3.z, 1.0)
+				
+				var frustum_corners : PackedVector4Array = [top_left, top_right, bottom_left, bottom_right]
+				
+				var render_params : PackedFloat32Array = PackedFloat32Array()
+				render_params.push_back(render_size.x)
+				render_params.push_back(render_size.y)
+				render_params.push_back(0.0) # pad
+				render_params.push_back(0.0) # pad
+
 				var color_image : RDUniform = RDUniform.new()
 				color_image.uniform_type = RenderingDevice.UNIFORM_TYPE_IMAGE
 				color_image.binding = 0
@@ -60,10 +90,14 @@ func _render_callback(p_effect_callback_type, p_render_data):
 				
 				var uniform_set = UniformSetCacheRD.get_cache(shader, 0, [ color_image, cubemap_image ])
 				
+				var push_constants : PackedByteArray
+				push_constants.append_array(frustum_corners.to_byte_array())
+				push_constants.append_array(render_params.to_byte_array())
+				
 				var compute_list = rd.compute_list_begin()
 				rd.compute_list_bind_compute_pipeline(compute_list, pipeline)
 				rd.compute_list_bind_uniform_set(compute_list, uniform_set, 0)
-				rd.compute_list_set_push_constant(compute_list, push_constants.to_byte_array(), push_constants.size() * 4)
+				rd.compute_list_set_push_constant(compute_list, push_constants, push_constants.size())
 				rd.compute_list_dispatch(compute_list, x_groups, y_groups, z_groups)
 				rd.compute_list_end()
 
@@ -86,7 +120,7 @@ func _init_compute():
 	sampler_state.mag_filter = RenderingDevice.SAMPLER_FILTER_NEAREST
 	nearest_sampler = rd.sampler_create(sampler_state)
 	
-	var bayer : CompressedTexture2D = load("res://Dither/bayer.png")
+	var bayer : CompressedTexture2D = load("res://Dither/bayer16tile16.png")
 	var bayer_img : Image = bayer.get_image()
 	bayer_img.convert(Image.FORMAT_R8)
 	
