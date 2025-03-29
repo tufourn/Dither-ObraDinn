@@ -42,34 +42,20 @@ func _render_callback(p_effect_callback_type, p_render_data):
 				var input_image = render_scene_buffers.get_color_layer(view)
 				
 				var projection : Projection = render_scene_data.get_view_projection(view)
-				var cam_transform : Transform3D = render_scene_data.get_cam_transform()
+				var view_inverse : Transform3D = render_scene_data.get_cam_transform()
 				var eye_offset : Vector3 = render_scene_data.get_view_eye_offset(view)
+				var eye_position : Vector3 = view_inverse * Vector3(0.0, 0.0, 0.0) + eye_offset
 				
-				var eye_position : Vector3 = cam_transform * Vector3(0.0, 0.0, 0.0) + eye_offset
-				var eye_position_vec4 = Vector4(eye_position.x, eye_position.y, eye_position.z, 1.0)
+				var frustum_corners_ndc : Array[Vector4] = [
+					Vector4(-1, -1, 1, 1), Vector4(1, -1, 1, 1), # TL, TR
+					Vector4(-1, 1, 1, 1), Vector4(1, 1, 1, 1) # BL, BR
+				]
 				
-				# ndc of frustum corners
-				var top_left : Vector4 = Vector4(-1.0, -1.0, 1.0, 1.0)
-				var top_right : Vector4 = Vector4(1.0, -1.0, 1.0, 1.0)
-				var bottom_left : Vector4 = Vector4(-1.0, 1.0, 1.0, 1.0)
-				var bottom_right : Vector4 = Vector4(1.0, 1.0, 1.0, 1.0)
-				
-				top_left = projection.inverse() * top_left
-				top_right = projection.inverse() * top_right
-				bottom_left = projection.inverse() * bottom_left
-				bottom_right = projection.inverse() * bottom_right
-				
-				var top_left_vec3 : Vector3 = cam_transform * Vector3(top_left.x, top_left.y, top_left.z) - eye_position
-				var top_right_vec3 : Vector3 = cam_transform * Vector3(top_right.x, top_right.y, top_right.z) - eye_position
-				var bottom_left_vec3 : Vector3 = cam_transform * Vector3(bottom_left.x, bottom_left.y, bottom_left.z) - eye_position
-				var bottom_right_vec3 : Vector3 = cam_transform * Vector3(bottom_right.x, bottom_right.y, bottom_right.z) - eye_position
-				
-				top_left = Vector4(top_left_vec3.x, top_left_vec3.y, top_left_vec3.z, 1.0)
-				top_right = Vector4(top_right_vec3.x, top_right_vec3.y, top_right_vec3.z, 1.0)
-				bottom_left = Vector4(bottom_left_vec3.x, bottom_left_vec3.y, bottom_left_vec3.z, 1.0)
-				bottom_right = Vector4(bottom_right_vec3.x, bottom_right_vec3.y, bottom_right_vec3.z, 1.0)
-				
-				var frustum_corners : PackedVector4Array = [top_left, top_right, bottom_left, bottom_right]
+				var frustum_corners : PackedVector4Array
+				for ndc in frustum_corners_ndc:
+					var view_space = projection.inverse() * ndc
+					var corner = view_inverse * Vector3(view_space.x, view_space.y, view_space.z) - eye_position
+					frustum_corners.append(Vector4(corner.x, corner.y, corner.z, 1.0))
 				
 				var render_params : PackedFloat32Array = PackedFloat32Array()
 				render_params.push_back(render_size.x)

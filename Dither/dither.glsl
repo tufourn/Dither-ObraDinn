@@ -16,12 +16,6 @@ layout(push_constant, std430) uniform PushConstants {
 	vec2 reserved;
 } pc;
 
-const mat4 bayer_index = mat4(
-	vec4(00.0/16.0, 12.0/16.0, 03.0/16.0, 15.0/16.0),
-	vec4(08.0/16.0, 04.0/16.0, 11.0/16.0, 07.0/16.0),
-	vec4(02.0/16.0, 14.0/16.0, 01.0/16.0, 13.0/16.0),
-	vec4(10.0/16.0, 06.0/16.0, 09.0/16.0, 05.0/16.0));
-
 vec3 get_direction_to_pixel(vec2 uv) {
 	float u = float(uv.x) / pc.raster_size.x;
 	float v = float(uv.y) / pc.raster_size.y;
@@ -45,11 +39,6 @@ void main() {
 	vec4 color = imageLoad(color_image, uv);
 
 	float lum = color.r * 0.2125 + color.g * 0.7154 + color.b * 0.0721;
-
-	ivec2 bayer_uv = uv / 2;
-	float bayer_value = bayer_index[bayer_uv.x % 4][bayer_uv.y % 4];
-	
-
 	float bayer_threshold = texture(cubemap_image, get_direction_to_pixel(uv)).r;
 	color.rgb = vec3(step(bayer_threshold, lum));
 
