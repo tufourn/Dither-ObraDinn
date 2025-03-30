@@ -15,7 +15,6 @@ run/main_scene="uid://b3b0toiw3odig"
 config/features=PackedStringArray("4.4", "Forward Plus")
 config/icon="res://icon.svg"
 
-[display]
+[rendering]
 
-window/size/viewport_width=800
-window/size/viewport_height=450
+scaling_3d/scale=2.0

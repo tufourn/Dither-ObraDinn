@@ -2,19 +2,24 @@
 
 extends EditorScript
 
-const slice_count : int = 64
+const tiling : int = 32
 const resolution : int = 2048
  
-# 4x4 bayer matrix
+const bayer_size = 8
 const bayer = [
-	[00.0/16.0, 12.0/16.0, 03.0/16.0, 15.0/16.0],
-	[08.0/16.0, 04.0/16.0, 11.0/16.0, 07.0/16.0],
-	[02.0/16.0, 14.0/16.0, 01.0/16.0, 13.0/16.0],
-	[10.0/16.0, 06.0/16.0, 09.0/16.0, 05.0/16.0]
-]
+	[ 0.0/64.0, 32.0/64.0,  8.0/64.0, 40.0/64.0,  2.0/64.0, 34.0/64.0, 10.0/64.0, 42.0/64.0 ],
+	[ 48.0/64.0, 16.0/64.0, 56.0/64.0, 24.0/64.0, 50.0/64.0, 18.0/64.0, 58.0/64.0, 26.0/64.0 ],
+	[ 12.0/64.0, 44.0/64.0,  4.0/64.0, 36.0/64.0, 14.0/64.0, 46.0/64.0,  6.0/64.0, 38.0/64.0 ],
+	[ 60.0/64.0, 28.0/64.0, 52.0/64.0, 20.0/64.0, 62.0/64.0, 30.0/64.0, 54.0/64.0, 22.0/64.0 ],
+	[  3.0/64.0, 35.0/64.0, 11.0/64.0, 43.0/64.0,  1.0/64.0, 33.0/64.0,  9.0/64.0, 41.0/64.0 ],
+	[ 51.0/64.0, 19.0/64.0, 59.0/64.0, 27.0/64.0, 53.0/64.0, 21.0/64.0, 61.0/64.0, 29.0/64.0 ],
+	[ 15.0/64.0, 47.0/64.0,  7.0/64.0, 39.0/64.0, 13.0/64.0, 45.0/64.0,  5.0/64.0, 37.0/64.0 ],
+	[ 63.0/64.0, 31.0/64.0, 55.0/64.0, 23.0/64.0, 61.0/64.0, 29.0/64.0, 57.0/64.0, 25.0/64.0 ]
+];
 
 func _run() -> void:
-	var image : Image = Image.create_empty(resolution, resolution, false, Image.FORMAT_L8)
+	var image_sphere : Image = Image.create(resolution, resolution, false, Image.FORMAT_L8)
+	var image_square : Image = Image.create(resolution, resolution, false, Image.FORMAT_L8)
 	var half_res : int = resolution / floor(2)
 	for x in range(resolution):
 		for y in range(resolution):
@@ -24,23 +29,30 @@ func _run() -> void:
 			const cube_z = 1.0 # all 6 faces of cubemap use the same texture so we only do one face (z+)
 			
 			# https://mathproofs.blogspot.com/2005/07/mapping-cube-to-sphere.html
-			# x and y goes from -sqrt(2) / 2 to sqrt(2) / 2
 			var sphere_x = cube_x * sqrt(1 - cube_y ** 2 / 2 - cube_z ** 2 / 2 + cube_y ** 2 * cube_z ** 2 / 3)
 			var sphere_y = cube_y * sqrt(1 - cube_z ** 2 / 2 - cube_x ** 2 / 2 + cube_z ** 2 * cube_x ** 2 / 3)
 			# var sphere_z = cube_z * sqrt(1 - cube_x ** 2 / 2 - cube_y ** 2 / 2 + cube_x ** 2 * cube_y ** 2 / 3)
 			
-			# normalize to 0-1
+			# normalize to 0-1 (sphere x and y goes from -sqrt(2) / 2 to sqrt(2) / 2)
 			var uv_x = (sphere_x + sqrt(2) / 2) / sqrt(2)
 			var uv_y = (sphere_y + sqrt(2) / 2) / sqrt(2)
 			
-			uv_x = fmod(uv_x * slice_count, 1.0)
-			uv_y = fmod(uv_y * slice_count, 1.0)
+			uv_x = fmod(uv_x * tiling, 1.0)
+			uv_y = fmod(uv_y * tiling, 1.0)
 			
-			var bayer_x = floor(uv_x * 4)
-			var bayer_y = floor(uv_y * 4)
+			var bayer_x = floor(uv_x * bayer_size)
+			var bayer_y = floor(uv_y * bayer_size)
 			var bayer_val = bayer[bayer_x][bayer_y]
-			image.set_pixel(x, y, Color(bayer_val, bayer_val, bayer_val, 1.0))
+			image_sphere.set_pixel(x, y, Color(bayer_val, bayer_val, bayer_val, 1.0))
 			
-	var image_path = "res://Dither/cubemap_face.png"
-	image.save_png(image_path)
+			# normal tiled bayer texture for testing
+			var bayer_x_square = floor(fmod(float(x) / (resolution - 1) * tiling, 1.0) * bayer_size)
+			var bayer_y_square = floor(fmod(float(y) / (resolution - 1) * tiling, 1.0) * bayer_size)
+			var bayer_val_square = bayer[bayer_x_square][bayer_y_square]
+			image_square.set_pixel(x, y, Color(bayer_val_square, bayer_val_square, bayer_val_square, 1.0))
+			
+	var image_sphere_path = "res://Dither/cubemap_face.png"
+	var image_square_path = "res://Dither/bayer_texture.png"
+	image_sphere.save_png(image_sphere_path)
+	image_square.save_png(image_square_path)
 	
