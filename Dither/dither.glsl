@@ -20,7 +20,6 @@ vec3 get_direction_to_pixel(vec2 uv) {
 	float u = float(uv.x) / pc.raster_size.x;
 	float v = float(uv.y) / pc.raster_size.y;
 
-	// todo: slerp instead of lerp
 	vec3 top = mix(pc.frustum_top_left.xyz, pc.frustum_top_right.xyz, u);
 	vec3 bot = mix(pc.frustum_bottom_left.xyz, pc.frustum_bottom_right.xyz, u);
 	vec3 direction = mix(top, bot, v);
@@ -41,6 +40,7 @@ void main() {
 	float lum = color.r * 0.2125 + color.g * 0.7154 + color.b * 0.0721;
 	float bayer_threshold = texture(cubemap_image, get_direction_to_pixel(uv)).r;
 	color.rgb = vec3(step(bayer_threshold, lum));
+	// color.rgb = vec3(bayer_threshold, bayer_threshold, bayer_threshold);
 
 	imageStore(color_image, uv, color);
 }

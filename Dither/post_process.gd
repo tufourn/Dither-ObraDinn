@@ -106,7 +106,7 @@ func _init_compute():
 	sampler_state.mag_filter = RenderingDevice.SAMPLER_FILTER_NEAREST
 	nearest_sampler = rd.sampler_create(sampler_state)
 	
-	var bayer : CompressedTexture2D = load("res://Dither/bayer16tile16.png")
+	var bayer : CompressedTexture2D = load("res://Dither/cubemap_face.png")
 	var bayer_img : Image = bayer.get_image()
 	bayer_img.convert(Image.FORMAT_R8)
 	
