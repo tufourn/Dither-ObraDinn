@@ -2,7 +2,7 @@
 
 extends EditorScript
 
-const tiling : int = 64 # power of 2
+const tiling : int = 32
 const resolution : int = 2048
  
 const bayer_size = 8
@@ -29,16 +29,25 @@ func _run() -> void:
 			var dir = Vector3(cube_x, cube_y, cube_z)
 			dir /= dir.length()
 			
-			var angle_x : float = atan2(dir.z, dir.x) # pi/4 to 3pi/4
-			var angle_y : float = atan2(dir.z, dir.y) # pi/4 to 3pi/4
+			var angle_x : float = atan2(dir.z, dir.x) # 3pi/4 downto pi/4
+			var angle_y : float = atan2(dir.z, dir.y) # 3pi/4 downto pi/4
 			
-			var bayer_x : int = floori((angle_x - PI / 4) / (PI / 2) * (bayer_size * tiling)) % bayer_size
-			var bayer_y : int = floori((angle_y - PI / 4) / (PI / 2) * (bayer_size * tiling)) % bayer_size
+			# normalize to 0-1
+			var angle_x_normalized = (angle_x - PI / 4) / (PI / 2)
+			var angle_y_normalized = (angle_y - PI / 4) / (PI / 2)
 			
-			if (x == 0):
-				bayer_x = bayer_size - 1
-			if (y == 0):
-				bayer_y = bayer_size - 1
+			var bayer_x : int = roundi(angle_x_normalized * bayer_size * tiling) % bayer_size
+			var bayer_y : int = roundi(angle_y_normalized * bayer_size * tiling) % bayer_size
+			
+			#bayer_x = floori(angle_x_normalized * bayer_size * tiling) % bayer_size
+			#bayer_y = floori(angle_y_normalized * bayer_size * tiling) % bayer_size
+			# when angle_normalized == 1, bayer index should be (bayer_size - 1)
+			# but the modulo calculation returns 0 so we have to fix it
+			#if (x == 0):
+				#bayer_x = bayer_size - 1
+			#if (y == 0):
+				#bayer_y = bayer_size - 1
+				
 			var bayer_val = bayer[bayer_x][bayer_y]
 			image_sphere.set_pixel(x, y, Color(bayer_val, bayer_val, bayer_val, 1.0))
 			

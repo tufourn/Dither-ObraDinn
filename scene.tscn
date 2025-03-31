@@ -48,7 +48,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.04, 0.5, 0.872)
 mesh = SubResource("SphereMesh_3253y")
 
 [node name="Camera3D" type="Camera3D" parent="."]
-transform = Transform3D(0.949513, -0.058636, 0.308199, 0, 0.982379, 0.186901, -0.313727, -0.177465, 0.932782, 0.686511, 0.941996, 2.11271)
+transform = Transform3D(0.949513, -0.0586359, 0.308199, 0, 0.982379, 0.186901, -0.313727, -0.177465, 0.932782, 0.686511, 0.941996, 2.11271)
 fov = 90.0
 script = ExtResource("1_ulcgi")
 
