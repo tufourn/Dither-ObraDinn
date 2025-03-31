@@ -40,7 +40,7 @@ void main() {
 	float lum = color.r * 0.2125 + color.g * 0.7154 + color.b * 0.0721;
 	float bayer_threshold = texture(cubemap_image, get_direction_to_pixel(uv)).r;
 	color.rgb = vec3(step(bayer_threshold, lum));
-	color.rgb = vec3(bayer_threshold, bayer_threshold, bayer_threshold);
+	// color.rgb = vec3(bayer_threshold, bayer_threshold, bayer_threshold); // for testing
 
 	imageStore(color_image, uv, color);
 }

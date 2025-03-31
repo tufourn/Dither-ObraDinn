@@ -107,7 +107,7 @@ func _init_compute():
 	nearest_sampler = rd.sampler_create(sampler_state)
 	
 	var bayer : CompressedTexture2D = load("res://Dither/cubemap_face.png")
-	# var bayer : CompressedTexture2D = load("res://Dither/bayer_texture.png")
+	# bayer = load("res://Dither/bayer_texture.png")
 	var bayer_img : Image = bayer.get_image()
 	bayer_img.convert(Image.FORMAT_R8)
 	

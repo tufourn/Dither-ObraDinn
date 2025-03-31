@@ -16,7 +16,7 @@ albedo_texture = ExtResource("1_nxogm")
 
 [sub_resource type="SphereMesh" id="SphereMesh_3253y"]
 
-[sub_resource type="Environment" id="Environment_u3cyc"]
+[sub_resource type="Environment" id="Environment_3253y"]
 
 [sub_resource type="CompositorEffect" id="CompositorEffect_m7jmp"]
 resource_local_to_scene = false
@@ -49,6 +49,7 @@ mesh = SubResource("SphereMesh_3253y")
 
 [node name="Camera3D" type="Camera3D" parent="."]
 transform = Transform3D(0.949513, -0.058636, 0.308199, 0, 0.982379, 0.186901, -0.313727, -0.177465, 0.932782, 0.686511, 0.941996, 2.11271)
+fov = 90.0
 script = ExtResource("1_ulcgi")
 
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
@@ -56,5 +57,5 @@ transform = Transform3D(0.705872, -0.317586, 0.633155, 0, 0.893857, 0.448352, -0
 shadow_enabled = true
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
-environment = SubResource("Environment_u3cyc")
+environment = SubResource("Environment_3253y")
 compositor = SubResource("Compositor_y2354")
