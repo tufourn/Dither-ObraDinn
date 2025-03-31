@@ -17,8 +17,8 @@ layout(push_constant, std430) uniform PushConstants {
 } pc;
 
 vec3 get_direction_to_pixel(vec2 uv) {
-	float u = float(uv.x) / pc.raster_size.x;
-	float v = float(uv.y) / pc.raster_size.y;
+	float u = float(uv.x) / (pc.raster_size.x - 1);
+	float v = float(uv.y) / (pc.raster_size.y - 1);
 
 	vec3 top = mix(pc.frustum_top_left.xyz, pc.frustum_top_right.xyz, u);
 	vec3 bot = mix(pc.frustum_bottom_left.xyz, pc.frustum_bottom_right.xyz, u);
